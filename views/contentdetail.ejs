@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= typeName === 'MOVIE' ? 'Movie' : 'Web Series' %> - <%= content.name %></title>
+    <link rel="icon" type="image/x-icon" href="/icon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .poster-shadow {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            border-radius: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+        .poster-shadow:hover { transform: scale(1.02); }
+        .details-container {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        .fs-6 { font-size: 0.95rem; }
+
+        @media (max-width: 992px) { .details-container { padding: 1.5rem; } }
+        @media (max-width: 768px) { .poster-shadow { max-height: 400px; } }
+        @media (max-width: 576px) {
+            .poster-shadow { max-height: 300px; }
+            h1.display-5 { font-size: 1.75rem; }
+            .lead { font-size: 0.95rem; }
+            .btn { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<%- include('partials/navbar', { currentPage: typeName.toLowerCase() }) %>
+
+<div class="container py-5">
+    <div class="row g-4 details-container">
+
+        <!-- Poster -->
+        <div class="col-lg-4 col-md-5 col-12 text-center">
+            <img src="<%= content.poster_url %>"
+                 class="img-fluid poster-shadow"
+                 alt="<%= content.name %> Poster"
+                 style="width: 100%; object-fit: cover; max-height: 500px;"
+                 loading="lazy">
+        </div>
+
+        <!-- Details -->
+        <div class="col-lg-8 col-md-7 col-12">
+            <h1 class="display-5 fw-bold mb-1"><%= content.name %></h1>
+
+            <p class="text-muted border-bottom pb-3 mb-3">
+                <span class="fw-bold me-2"><%= typeName === 'MOVIE' ? 'Movie Details' : 'Web Series Details' %></span>
+                <span class="badge bg-warning text-dark fs-6">⭐ <%= content.rating.toFixed(1) %></span>
+            </p>
+
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <span class="badge text-bg-primary fs-6"><%= content.genre %></span>
+                <% if (content.release_year) { %>
+                    <span class="badge text-bg-secondary fs-6">Release: <%= content.release_year %></span>
+                <% } %>
+                <% if (content.duration) { %>
+                    <span class="badge text-bg-info fs-6"><%= content.duration %></span>
+                <% } %>
+            </div>
+
+            <h3 class="h5 mt-4 text-primary">Plot Summary</h3>
+            <p class="lead"><%= content.plot_summary %></p>
+
+            <!-- Actions -->
+            <div class="mt-5 pt-3 border-top d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-success btn-lg" onclick="generateToken(<%= content.id %>)">
+                        ⬇️ Next Step
+                    </button>
+                <a href="<%= typeName.toLowerCase() === 'movie' ? '/movies' : '/webseries' %>"
+                   class="btn btn-outline-secondary btn-lg">⬅ Back to List</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Footer -->
+<%- include('partials/footer') %>
+
+<!-- Scripts -->
+<script>
+    function generateToken(id) {
+        const tokenData = { id: id };
+        const token = JSON.stringify(tokenData);
+        const encryptedToken = btoa(token);
+        window.location.href = "/file/choose/" + encryptedToken;
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

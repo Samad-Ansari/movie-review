@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieAurSeries - Privacy Policy</title>
+    <link rel="icon" type="image/x-icon" href="/icon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media (max-width: 576px) {
+            h1 { font-size: 2rem; }
+            h5 { font-size: 1.1rem; }
+            p { font-size: 0.95rem; }
+            .card { padding: 1rem; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<%- include('partials/navbar', { currentPage: 'privacy' }) %>
+
+<!-- Main Content -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-md-10 col-12">
+            <h1 class="mb-4 text-center">Privacy Policy</h1>
+
+            <div class="card shadow-sm p-4">
+                <p>
+                    At <strong>MovieAurSeries</strong>, your privacy is very important to us. We are committed to protecting your personal information and being transparent about how we use it.
+                </p>
+
+                <h5>Information We Collect</h5>
+                <p>
+                    We only collect personal information that you voluntarily provide, such as when you fill out contact forms, subscribe to updates, or leave feedback. We do not automatically collect personal data.
+                </p>
+
+                <h5>How We Use Your Information</h5>
+                <p>
+                    Information you share with us is used solely to improve our services, respond to inquiries, and send updates you requested. We never sell or share your personal data with third parties for marketing purposes.
+                </p>
+
+                <h5>Cookies and Tracking</h5>
+                <p>
+                    Our website may use cookies or similar technologies to enhance your browsing experience and analyze site usage. You can choose to disable cookies through your browser settings if you prefer.
+                </p>
+
+                <h5>Third-Party Links</h5>
+                <p>
+                    Some pages may contain links to other websites. We are not responsible for the privacy practices or content of those external sites, so please review their privacy policies independently.
+                </p>
+
+                <h5>Your Rights</h5>
+                <p>
+                    You have the right to access, update, or request deletion of any personal information you share with us. You can contact us at any time to exercise these rights.
+                </p>
+
+                <h5>Changes to This Privacy Policy</h5>
+                <p>
+                    We may update this Privacy Policy periodically to reflect changes in our practices or regulations. The most recent version will always be available on this page with the updated date.
+                </p>
+
+                <p class="mt-4">
+                    For any questions or concerns regarding this policy, feel free to reach us at
+                    <a href="mailto:support@movieaurseries.com">support@movieaurseries.com</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<%- include('partials/footer') %>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
