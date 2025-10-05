@@ -33,9 +33,10 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // --- Routes ---
-app.use("/admin", adminRouter); // all your adminController routes
-app.use("/file", downloadRouter); // all your adminController routes
-app.use("/", contentRouter); // all your contentController routes
+app.use("/admin", adminRouter); 
+app.use("/file", downloadRouter);
+app.use("/visits", visitRouter); 
+app.use("/", contentRouter);
 
 // --- Start Server ---
 app.listen(PORT, () => {
