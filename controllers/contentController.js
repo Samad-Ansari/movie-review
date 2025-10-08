@@ -47,24 +47,31 @@ router.get("/webseries", async (req, res) => {
   try {
     const page = parseIntParam(req.query.page, 0);
     const keyword = req.query.keyword || "";
+    const size = 8;
 
     await visitService.trackVisit(req, "webseries-list");
 
-    const size = 8;
-    let contents;
+    let contents, totalCount;
+
     if (keyword) {
+      // Get paginated search results
       contents = await contentService.searchContentsByTypeAndKeyword("WEBSERIES", keyword, page, size);
+      // Get total matching count for pagination
+      totalCount = await contentService.countContentsByTypeAndKeyword("WEBSERIES", keyword);
     } else {
+      // Get paginated list
       contents = await contentService.getContentsByType("WEBSERIES", page, size);
+      // Get total count
+      totalCount = await contentService.countContentsByType("WEBSERIES");
     }
 
     res.render("content", {
       contents,
       currentPage: page,
       keyword,
-      totalPages: Math.ceil(contents.length / size),
-      contentType: "webseries",
-      currentPath: req.originalUrl,
+      totalPages: Math.ceil(totalCount / size),
+      contentType: "WEBSERIES",  // match template condition
+      currentPath: "/webseries",  // keep it clean for pagination links
     });
   } catch (err) {
     console.error("Error fetching webseries:", err);
