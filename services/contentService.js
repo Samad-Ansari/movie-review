@@ -179,3 +179,13 @@ export const findByTypeAndName = async (type, keyword, page = 0, size = 10) => {
   `;
   return result;
 };
+
+
+export async function countContentsByType(type) {
+    const result = await sql`
+    SELECT COUNT(*) as total
+    FROM content
+    WHERE type = ${type}
+  `;
+  return result[0].total; // total number of rows for this type
+}
