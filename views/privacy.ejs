@@ -1,77 +1,144 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovieAurSeries - Privacy Policy</title>
-    <link rel="icon" type="image/x-icon" href="/icon.png">
+    <title>Preparing File...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        @media (max-width: 576px) {
-            h1 { font-size: 2rem; }
-            h5 { font-size: 1.1rem; }
-            p { font-size: 0.95rem; }
-            .card { padding: 1rem; }
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
         }
-    </style>
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 500px;
+        }
+        .counter-box {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        .btn-lg {
+            min-width: 200px;
+            border-radius: 50px;
+            font-size: 1.15rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-lg:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+        }
+        .lead { font-size: 1.1rem; }
+        .ready-msg { font-weight: 600; }
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 576px) {
+            .counter-box { font-size: 3rem; }
+            .btn-lg { font-size: 1rem; min-width: 160px; }
+        }
+    </style><script src="ga.js"></script>
+
 </head>
-<body class="bg-light">
+<body>
+    
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="row w-100">
+        <div class="col-md-6 col-lg-5 mx-auto">
+            <div class="card p-4 text-center">
 
-<!-- Navbar -->
-<%- include('partials/navbar', { currentPage: 'privacy' }) %>
+                <!-- File Preparation Section -->
+                <% if (token) { %>
+                    <h1 class="card-title mb-4">Preparing Your File...</h1>
+                    <p class="lead mb-3">
+                        Please wait <span id="counter" class="counter-box">5</span> seconds
+                    </p>
+                    <div id="btnWrapper" class="mt-3"></div>
+                    <p id="readyMessage" class="text-success lead mt-3 d-none ready-msg">
+                        Your file is ready! Click the button above to find file.
+                    </p>
+                    <hr class="my-4">
+                    <p class="text-muted small">For security, a short preparation delay is applied.</p>
+                <% } else { %>
+                    <h2 class="mb-3">Welcome to Your Movie Hub Blog</h2>
+                    <p class="text-muted">
+                        Discover latest articles, movie updates, and behind-the-scenes stories from the world of cinema.
+                    </p>
+                <% } %>
 
-<!-- Main Content -->
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10 col-md-10 col-12">
-            <h1 class="mb-4 text-center">Privacy Policy</h1>
-
-            <div class="card shadow-sm p-4">
-                <p>
-                    At <strong>MovieAurSeries</strong>, your privacy is very important to us. We are committed to protecting your personal information and being transparent about how we use it.
-                </p>
-
-                <h5>Information We Collect</h5>
-                <p>
-                    We only collect personal information that you voluntarily provide, such as when you fill out contact forms, subscribe to updates, or leave feedback. We do not automatically collect personal data.
-                </p>
-
-                <h5>How We Use Your Information</h5>
-                <p>
-                    Information you share with us is used solely to improve our services, respond to inquiries, and send updates you requested. We never sell or share your personal data with third parties for marketing purposes.
-                </p>
-
-                <h5>Cookies and Tracking</h5>
-                <p>
-                    Our website may use cookies or similar technologies to enhance your browsing experience and analyze site usage. You can choose to disable cookies through your browser settings if you prefer.
-                </p>
-
-                <h5>Third-Party Links</h5>
-                <p>
-                    Some pages may contain links to other websites. We are not responsible for the privacy practices or content of those external sites, so please review their privacy policies independently.
-                </p>
-
-                <h5>Your Rights</h5>
-                <p>
-                    You have the right to access, update, or request deletion of any personal information you share with us. You can contact us at any time to exercise these rights.
-                </p>
-
-                <h5>Changes to This Privacy Policy</h5>
-                <p>
-                    We may update this Privacy Policy periodically to reflect changes in our practices or regulations. The most recent version will always be available on this page with the updated date.
-                </p>
-
-                <p class="mt-4">
-                    For any questions or concerns regarding this policy, feel free to reach us at
-                    <a href="mailto:support@movieaurseries.com">support@movieaurseries.com</a>.
-                </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Footer -->
-<%- include('partials/footer') %>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let token = "<%= token %>" || null;
+    if (!token) return;
+
+    // Clean URL after redirect
+    const cleanPath = window.location.pathname.split("/").slice(0, -2).join("/") || "/";
+    window.history.replaceState({}, document.title, cleanPath + "/");
+
+    const counterEl = document.getElementById("counter");
+    const btnWrapper = document.getElementById("btnWrapper");
+    const readyMsg = document.getElementById("readyMessage");
+
+    // Disable buttons on back navigation
+    window.addEventListener("pageshow", function (event) {
+        if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+            token = null;
+            btnWrapper.innerHTML = "";
+            readyMsg.classList.add("d-none");
+        }
+    });
+
+    if (counterEl && btnWrapper && readyMsg) {
+        let timeLeft = 5;
+        const timer = setInterval(() => {
+            timeLeft--;
+            counterEl.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                counterEl.textContent = "0";
+
+                const btn = document.createElement("button");
+                btn.innerText = "⬇️ Find File";
+                btn.className = "btn btn-primary btn-lg fade-in";
+                btn.onclick = function () {
+                    fetch(`/file/getting?token=${encodeURIComponent(token)}`)
+                        .then(response => response.text())
+                        .then(fileLink => {
+                            console.log(fileLink);
+                            if (!fileLink || fileLink.length < 5) {
+                                alert("File link is invalid or unavailable.");
+                                return;
+                            }
+                            const a = document.createElement("a");
+                            a.href = fileLink;
+                            a.download = fileLink.split("/").pop();
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                        })
+                        .catch(err => {
+                            console.error("Error fetching file:", err);
+                            alert("Error while preparing file.");
+                        });
+                };
+                btnWrapper.appendChild(btn);
+                readyMsg.classList.remove("d-none");
+            }
+        }, 1000);
+    }
+});
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
