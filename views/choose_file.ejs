@@ -1,22 +1,57 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MovieAurSeries - File</title>
+    <title>MovieAurSeries - File <%= content.name %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Select a link to file or stream <%= content.name %> on MovieAurSeries.">
+    <meta name="keywords" content="MovieAurSeries, <%= content.name %>, File, Stream, Movies, Web Series">
+    <meta name="author" content="MovieAurSeries">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="File <%= content.name %> | MovieAurSeries">
+    <meta property="og:description" content="Select a link to file or stream <%= content.name %> online.">
+    <meta property="og:image" content="<%= content.poster_url %>">
+    <meta property="og:url" content="https://movieaurseries.xyz/file/choose/<%= content.id %>">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="File <%= content.name %> | MovieAurSeries">
+    <meta name="twitter:description" content="Select a link to file or stream <%= content.name %> online.">
+    <meta name="twitter:image" content="<%= content.poster_url %>">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "File <%= content.name %> | MovieAurSeries",
+      "url": "https://movieaurseries.xyz/file/choose/<%= content.id %>",
+      "description": "Select a link to file or stream <%= content.name %> on MovieAurSeries."
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/icon.png">
+
     <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-70P8XD82JC"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-70P8XD82JC');
-</script>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-70P8XD82JC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-70P8XD82JC');
+    </script>
+
+    <!-- Styles -->
     <style>
         body {
             background: linear-gradient(135deg, #0d6efd, #6610f2);
@@ -77,46 +112,42 @@
         <div class="col-md-6 col-lg-5">
             <div class="card p-4 text-center">
 
-                <!-- Content Section -->
-                <div th:if="${content != null}">
-                    <h2 class="title section-header" th:text="|🎬 ${content.name}|"></h2>
+                <% if (content && content.links && content.links.length > 0) { %>
+                    <h2 class="title section-header">🎬 <%= content.name %></h2>
                     <p class="text-muted mb-4">Select a link to find file:</p>
 
-                    <% if (content && content.links && content.links.length > 0) { %>
                     <% content.links.forEach(link => { %>
-                        <div class="link-card">
-                            <% if (link.link) { %>
-                                <button class="btn btn-success btn-file" onclick="generateToken('<%= link.link %>')">  <%= link.title %>
+                        <% if (link.link) { %>
+                            <div class="link-card">
+                                <button class="btn btn-success btn-file" onclick="generateToken('<%= link.link %>')">
+                                    <i class="bi bi-download"></i> <%= link.title %>
                                 </button>
-                            <% } %>
-                        </div>
+                            </div>
+                        <% } %>
                     <% }); %>
                 <% } else { %>
                     <div class="text-muted">No files available.</div>
                 <% } %>
 
-                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script th:inline="javascript">
+<script>
     function generateToken(linkId) {
         const tokenData = { id: linkId };
-        const token = JSON.stringify(tokenData);
-        const encryptedToken = btoa(token);
+        const encryptedToken = btoa(JSON.stringify(tokenData));
         window.location.href = "/file/fetch/" + encryptedToken;
     }
 
     // Clean URL after redirect
-    let token = "<%= token %>" || null;
-    if (token) {
+    if (window.history.replaceState) {
         const cleanPath = window.location.pathname.split("/").slice(0, -2).join("/") || "/";
         window.history.replaceState({}, document.title, cleanPath + "/");
     }
 
-    // Disable buttons if user navigates back
+    // Disable buttons on back navigation
     window.addEventListener("pageshow", function(event) {
         if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
             document.querySelectorAll(".btn-file").forEach(btn => {
