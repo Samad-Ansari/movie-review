@@ -5,36 +5,47 @@ import * as visitService from "../services/visitService.js";
 
 const router = express.Router();
 
-// Helper to parse query params
+/* -------------------------- Helper Functions -------------------------- */
 const parseIntParam = (param, defaultValue = 0) => parseInt(param) || defaultValue;
 
-// ------------------ MOVIES ------------------
+const renderPage = async (res, view, data = {}, meta = {}) => {
+  res.render(view, {
+    ...data,
+    pageTitle: meta.title || "MovieAurSeries",
+    pageDescription: meta.description || "Explore movies and web series in Hindi dubbed and HD quality.",
+    pageKeywords: meta.keywords || "movies, webseries, Hindi dubbed, MovieAurSeries",
+  });
+};
+
+/* -------------------------- MOVIES -------------------------- */
 router.get(["/", "/movies"], async (req, res) => {
   try {
     const page = parseIntParam(req.query.page, 0);
     const keyword = req.query.keyword || "";
+    const size = 8;
 
     await visitService.trackVisit(req, "movies-list");
 
-    const size = 8;
-    let contents;
-    if (keyword) {
-      contents = await contentService.searchContentsByTypeAndKeyword("MOVIE", keyword, page, size);
-    } else {
-      contents = await contentService.getContentsByType("MOVIE", page, size);
-    }
+    const contents = keyword
+      ? await contentService.searchContentsByTypeAndKeyword("MOVIE", keyword, page, size)
+      : await contentService.getContentsByType("MOVIE", page, size);
 
-    // get total items count
     const totalCount = await contentService.countContentsByTypeAndKeyword("MOVIE", keyword);
     const totalPages = Math.ceil(totalCount / size);
 
-    res.render("content", {
+    await renderPage(res, "content", {
       contents,
       currentPage: page,
       keyword,
       totalPages,
       contentType: "movies",
-      currentPath: "/movies", // make pagination links consistent
+      currentPath: "/movies",
+    }, {
+      title: keyword
+        ? `Search Results for "${keyword}" | Movies | MovieAurSeries`
+        : "Latest Hindi Dubbed Movies | MovieAurSeries",
+      description: "Watch and explore the latest Hindi dubbed movies online on MovieAurSeries.",
+      keywords: "movies, Hindi dubbed, HD movies, download, stream",
     });
   } catch (err) {
     console.error("Error fetching movies:", err);
@@ -42,7 +53,7 @@ router.get(["/", "/movies"], async (req, res) => {
   }
 });
 
-// ------------------ WEBSERIES ------------------
+/* -------------------------- WEB SERIES -------------------------- */
 router.get("/webseries", async (req, res) => {
   try {
     const page = parseIntParam(req.query.page, 0);
@@ -51,27 +62,26 @@ router.get("/webseries", async (req, res) => {
 
     await visitService.trackVisit(req, "webseries-list");
 
-    let contents, totalCount;
+    const contents = keyword
+      ? await contentService.searchContentsByTypeAndKeyword("WEBSERIES", keyword, page, size)
+      : await contentService.getContentsByType("WEBSERIES", page, size);
 
-    if (keyword) {
-      // Get paginated search results
-      contents = await contentService.searchContentsByTypeAndKeyword("WEBSERIES", keyword, page, size);
-      // Get total matching count for pagination
-      totalCount = await contentService.countContentsByTypeAndKeyword("WEBSERIES", keyword);
-    } else {
-      // Get paginated list
-      contents = await contentService.getContentsByType("WEBSERIES", page, size);
-      // Get total count
-      totalCount = await contentService.countContentsByType("WEBSERIES");
-    }
+    const totalCount = await contentService.countContentsByTypeAndKeyword("WEBSERIES", keyword);
+    const totalPages = Math.ceil(totalCount / size);
 
-    res.render("content", {
+    await renderPage(res, "content", {
       contents,
       currentPage: page,
       keyword,
-      totalPages: Math.ceil(totalCount / size),
-      contentType: "WEBSERIES",  // match template condition
-      currentPath: "/webseries",  // keep it clean for pagination links
+      totalPages,
+      contentType: "webseries",
+      currentPath: "/webseries",
+    }, {
+      title: keyword
+        ? `Search Results for "${keyword}" | Web Series | MovieAurSeries`
+        : "Best Hindi Dubbed Web Series | MovieAurSeries",
+      description: "Discover trending Hindi dubbed web series. Watch and download latest episodes in HD.",
+      keywords: "web series, Hindi dubbed, HD series, Netflix, Amazon Prime",
     });
   } catch (err) {
     console.error("Error fetching webseries:", err);
@@ -79,8 +89,8 @@ router.get("/webseries", async (req, res) => {
   }
 });
 
-// ------------------ CONTENT DETAILS ------------------
-router.get("/movies/:id", async (req, res) => {
+/* -------------------------- MOVIE DETAIL -------------------------- */
+router.get("/movies/:id/:slug", async (req, res) => {
   try {
     const id = req.params.id;
     await visitService.trackVisit(req, `movie-detail-${id}`);
@@ -88,11 +98,15 @@ router.get("/movies/:id", async (req, res) => {
     const movie = await contentService.findByIdAndType(id, "MOVIE");
     if (!movie) return res.render("default_page");
 
-    res.render("contentdetail", {
+    await renderPage(res, "contentdetail", {
       typeName: movie.type.toLowerCase(),
       content: movie,
       links: movie.links || [],
       currentPath: req.originalUrl,
+    }, {
+      title: `${movie.name} (${movie.year}) | ${movie.language} | MovieAurSeries`,
+      description: `${movie.description?.slice(0, 150) || "Watch latest Hindi dubbed movie"}...`,
+      keywords: `${movie.name}, ${movie.genre}, ${movie.language}, movie, MovieAurSeries`,
     });
   } catch (err) {
     console.error("Error fetching movie details:", err);
@@ -100,7 +114,8 @@ router.get("/movies/:id", async (req, res) => {
   }
 });
 
-router.get("/webseries/:id", async (req, res) => {
+/* -------------------------- WEBSERIES DETAIL -------------------------- */
+router.get("/webseries/:id/:slug", async (req, res) => {
   try {
     const id = req.params.id;
     await visitService.trackVisit(req, `webseries-detail-${id}`);
@@ -108,11 +123,15 @@ router.get("/webseries/:id", async (req, res) => {
     const series = await contentService.findByIdAndType(id, "WEBSERIES");
     if (!series) return res.render("default_page");
 
-    res.render("contentdetail", {
+    await renderPage(res, "contentdetail", {
       typeName: series.type.toLowerCase(),
       content: series,
       links: series.links || [],
       currentPath: req.originalUrl,
+    }, {
+      title: `${series.name} (${series.year}) | ${series.language} | MovieAurSeries`,
+      description: `${series.description?.slice(0, 150) || "Watch trending Hindi dubbed series"}...`,
+      keywords: `${series.name}, ${series.genre}, ${series.language}, webseries, MovieAurSeries`,
     });
   } catch (err) {
     console.error("Error fetching webseries details:", err);
@@ -120,43 +139,58 @@ router.get("/webseries/:id", async (req, res) => {
   }
 });
 
-// ------------------ STATIC PAGES ------------------
+/* -------------------------- STATIC PAGES -------------------------- */
 router.get("/about", async (req, res) => {
   try { await visitService.trackVisit(req, "about"); } catch {}
-  res.render("about", { currentPath: req.originalUrl });
+  await renderPage(res, "about", { currentPath: req.originalUrl }, {
+    title: "About Us | MovieAurSeries",
+    description: "Learn more about MovieAurSeries, your go-to platform for movies and web series.",
+  });
 });
 
 router.get("/contact", async (req, res) => {
   try { await visitService.trackVisit(req, "contact"); } catch {}
-  res.render("contact", { currentPath: req.originalUrl });
+  await renderPage(res, "contact", { currentPath: req.originalUrl }, {
+    title: "Contact Us | MovieAurSeries",
+    description: "Have questions or suggestions? Contact MovieAurSeries support.",
+  });
 });
 
 router.get("/privacy", async (req, res) => {
   try { await visitService.trackVisit(req, "privacy"); } catch {}
-  res.render("privacy", { currentPath: req.originalUrl });
+  await renderPage(res, "privacy", { currentPath: req.originalUrl }, {
+    title: "Privacy Policy | MovieAurSeries",
+    description: "Read our privacy policy to understand how MovieAurSeries handles your data.",
+  });
 });
 
-// ------------------ VISIT STATS ------------------
+/* -------------------------- VISIT STATS -------------------------- */
 router.get("/data/visits", async (req, res) => {
   try {
-    const dailyCounts = await visitService.getTodayVisits();
-    const weeklyCounts = await visitService.getWeeklyVisits();
-    const monthlyCounts = await visitService.getMonthlyVisits();
-    const weeklyVisits = await visitService.getVisitsLast7Days();
-    const monthlyVisits = await visitService.getVisitsLast30Days();
-    const topData = await visitService.topUrlVisits();
+    const [dailyCounts, weeklyCounts, monthlyCounts, weeklyVisits, monthlyVisits, topData] =
+      await Promise.all([
+        visitService.getTodayVisits(),
+        visitService.getWeeklyVisits(),
+        visitService.getMonthlyVisits(),
+        visitService.getVisitsLast7Days(),
+        visitService.getVisitsLast30Days(),
+        visitService.topUrlVisits(),
+      ]);
 
     const topUrls = topData.map(obj => obj.page_url);
     const topCounts = topData.map(obj => obj.visit_count);
 
-    res.render("visit-tracker", {
+    await renderPage(res, "visit-tracker", {
       dailyCounts,
       weeklyCounts,
       monthlyCounts,
       weeklyVisits,
       monthlyVisits,
       topUrls,
-      topCounts
+      topCounts,
+    }, {
+      title: "Visitor Analytics | MovieAurSeries",
+      description: "Track visit statistics and page popularity on MovieAurSeries.",
     });
   } catch (err) {
     console.error("Error fetching visits:", err);
@@ -164,9 +198,12 @@ router.get("/data/visits", async (req, res) => {
   }
 });
 
-// ------------------ FALLBACK ------------------
+/* -------------------------- FALLBACK -------------------------- */
 router.get("*", (req, res) => {
-  res.render("default_page");
+  renderPage(res, "default_page", {}, {
+    title: "Page Not Found | MovieAurSeries",
+    description: "Oops! The page you are looking for doesn’t exist. Explore latest movies instead.",
+  });
 });
 
 export default router;
