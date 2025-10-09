@@ -2,11 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title><%= typeName === 'movies' ? 'Movie' : 'Web Series' %> - <%= content.name %></title>
+    <title><%= content.name %> | <%= typeName === 'MOVIE' ? 'Watch Movie Online' : 'Watch Web Series Online' %> - MovieAurSeries</title>
     <link rel="icon" type="image/x-icon" href="/icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="<%= content.plot_summary ? content.plot_summary.substring(0, 155) : 'Watch ' + content.name + ' on MovieAurSeries. Explore ratings, genres, and story summaries for top movies and web series.' %>">
+    <meta name="keywords" content="<%= content.name %>, <%= typeName === 'MOVIE' ? 'movie' : 'web series' %>, <%= content.genre %>, Hindi Dubbed, Watch Online, MovieAurSeries, Ratings, Reviews">
+    <meta name="author" content="MovieAurSeries">
+    <meta property="og:title" content="<%= content.name %> - <%= typeName === 'MOVIE' ? 'Movie' : 'Web Series' %> | MovieAurSeries">
+    <meta property="og:description" content="<%= content.plot_summary ? content.plot_summary.substring(0, 155) : 'Explore details, genres, and ratings of ' + content.name + ' on MovieAurSeries.' %>">
+    <meta property="og:image" content="<%= content.poster_url %>">
+    <meta property="og:url" content="https://movieaurseries.xyz/<%= typeName.toLowerCase() %>/<%= content.id %>">
+    <meta property="og:type" content="website">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://movieaurseries.xyz/<%= typeName.toLowerCase() %>/<%= content.id %>">
 
+    <!-- Structured Data for Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "<%= typeName === 'MOVIE' ? 'Movie' : 'TVSeries' %>",
+      "name": "<%= content.name %>",
+      "image": "<%= content.poster_url %>",
+      "genre": "<%= content.genre %>",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "<%= content.rating.toFixed(1) %>",
+        "bestRating": "10"
+      },
+      "datePublished": "<%= content.release_year || '2025' %>",
+      "description": "<%= content.plot_summary ? content.plot_summary.substring(0, 180) : 'Watch ' + content.name + ' on MovieAurSeries.' %>"
+    }
+    </script>
+
+    <!-- Styles -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .poster-shadow {
             box-shadow: 0 8px 20px rgba(0,0,0,0.2);
@@ -15,13 +46,12 @@
         }
         .poster-shadow:hover { transform: scale(1.02); }
         .details-container {
-            background-color: #ffffff;
+            background-color: #fff;
             border-radius: 1rem;
             padding: 2rem;
             box-shadow: 0 0 10px rgba(0,0,0,0.05);
         }
         .fs-6 { font-size: 0.95rem; }
-
         @media (max-width: 992px) { .details-container { padding: 1.5rem; } }
         @media (max-width: 768px) { .poster-shadow { max-height: 400px; } }
         @media (max-width: 576px) {
@@ -31,82 +61,74 @@
             .btn { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
         }
     </style>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-70P8XD82JC"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-70P8XD82JC');
-</script>
-
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-70P8XD82JC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-70P8XD82JC');
+    </script>
 </head>
+
 <body class="bg-light">
+    <!-- Navbar -->
+    <%- include('partials/navbar', { currentPage: typeName.toLowerCase() }) %>
 
-<!-- Navbar -->
-<%- include('partials/navbar', { currentPage: typeName.toLowerCase() }) %>
-
-<div class="container py-5">
-    <div class="row g-4 details-container">
-
-        <!-- Poster -->
-        <div class="col-lg-4 col-md-5 col-12 text-center">
-            <img src="<%= content.poster_url %>"
-                 class="img-fluid poster-shadow"
-                 alt="<%= content.name %> Poster"
-                 style="width: 100%; object-fit: cover; max-height: 500px;"
-                 loading="lazy">
-        </div>
-
-        <!-- Details -->
-        <div class="col-lg-8 col-md-7 col-12">
-            <h1 class="display-5 fw-bold mb-1"><%= content.name %></h1>
-
-            <p class="text-muted border-bottom pb-3 mb-3">
-                <span class="fw-bold me-2"><%= typeName === 'MOVIE' ? 'Movie Details' : 'Web Series Details' %></span>
-                <span class="badge bg-warning text-dark fs-6">⭐ <%= content.rating.toFixed(1) %></span>
-            </p>
-
-            <div class="d-flex flex-wrap gap-2 mb-4">
-                <span class="badge text-bg-primary fs-6"><%= content.genre %></span>
-                <% if (content.release_year) { %>
-                    <span class="badge text-bg-secondary fs-6">Release: <%= content.release_year %></span>
-                <% } %>
-                <% if (content.duration) { %>
-                    <span class="badge text-bg-info fs-6"><%= content.duration %></span>
-                <% } %>
+    <!-- Main Content -->
+    <main class="container py-5">
+        <article class="row g-4 details-container">
+            <!-- Poster -->
+            <div class="col-lg-4 col-md-5 col-12 text-center">
+                <img src="<%= content.poster_url %>" 
+                     class="img-fluid poster-shadow" 
+                     alt="<%= content.name %> Poster" 
+                     style="width: 100%; object-fit: cover; max-height: 500px;" 
+                     loading="lazy">
             </div>
 
-            <h3 class="h5 mt-4 text-primary">Plot Summary</h3>
-            <p class="lead"><%= content.plot_summary %></p>
+            <!-- Details -->
+            <div class="col-lg-8 col-md-7 col-12">
+                <h1 class="display-5 fw-bold mb-1"><%= content.name %></h1>
+                <p class="text-muted border-bottom pb-3 mb-3">
+                    <span class="fw-bold me-2"><%= typeName === 'MOVIE' ? 'Movie Details' : 'Web Series Details' %></span>
+                    <span class="badge bg-warning text-dark fs-6">⭐ <%= content.rating.toFixed(1) %></span>
+                </p>
 
-            <!-- Actions -->
-            <div class="mt-5 pt-3 border-top d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-success btn-lg" onclick="generateToken(<%= content.id %>)">
-                        ⬇️ Next Step
-                    </button>
-                <a href="<%= typeName.toLowerCase() === 'movie' ? '/movies' : '/webseries' %>"
-                   class="btn btn-outline-secondary btn-lg">⬅ Back to List</a>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <span class="badge text-bg-primary fs-6"><%= content.genre %></span>
+                    <% if (content.release_year) { %>
+                        <span class="badge text-bg-secondary fs-6">Release: <%= content.release_year %></span>
+                    <% } %>
+                    <% if (content.duration) { %>
+                        <span class="badge text-bg-info fs-6"><%= content.duration %></span>
+                    <% } %>
+                </div>
+
+                <h3 class="h5 mt-4 text-primary">Plot Summary</h3>
+                <p class="lead"><%= content.plot_summary %></p>
+
+                <!-- Actions -->
+                <div class="mt-5 pt-3 border-top d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-success btn-lg" onclick="generateToken(<%= content.id %>)">⬇️ Next Step</button>
+                    <a href="<%= typeName.toLowerCase() === 'movie' ? '/movies' : '/webseries' %>" class="btn btn-outline-secondary btn-lg">⬅ Back to List</a>
+                </div>
             </div>
-        </div>
+        </article>
+    </main>
 
-    </div>
-</div>
+    <!-- Footer -->
+    <%- include('partials/footer') %>
 
-<!-- Footer -->
-<%- include('partials/footer') %>
-
-<!-- Scripts -->
-<script>
-    function generateToken(id) {
-        const tokenData = { id: id };
-        const token = JSON.stringify(tokenData);
-        const encryptedToken = btoa(token);
-        window.location.href = "/file/choose/" + encryptedToken;
-    }
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts -->
+    <script>
+        function generateToken(id) {
+            const tokenData = { id: id };
+            const encryptedToken = btoa(JSON.stringify(tokenData));
+            window.location.href = "/file/choose/" + encryptedToken;
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
