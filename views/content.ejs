@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/x-icon" href="/icon.png">
 
-    <!-- ✅ Social Sharing (Open Graph & Twitter Cards) -->
+    <!-- ✅ Social Sharing -->
     <meta property="og:title" content="<%= pageTitle || 'MovieAurSeries - Explore Movies & Web Series' %>">
     <meta property="og:description" content="<%= pageDescription || 'Watch Hindi dubbed movies and web series online in HD.' %>">
     <meta property="og:image" content="<%= contents?.[0]?.poster_url || '/default-thumbnail.jpg' %>">
@@ -36,17 +36,7 @@
             .btn { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
         }
     </style>
-
-    <!-- ✅ Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-70P8XD82JC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-70P8XD82JC');
-    </script>
 </head>
-
 <body class="bg-light">
 
 <!-- Navbar -->
@@ -59,25 +49,46 @@
         <%= contentType === 'movies' ? '🎬 Movies' : '📺 Web Series' %>
     </h1>
 
+    <% const safeKeyword = typeof keyword !== 'undefined' ? keyword : ''; %>
+    <% const safeGenre = typeof genre !== 'undefined' ? genre : ''; %>
+
     <!-- Search Form -->
     <form method="get" action="<%= currentPath %>" class="input-group mb-5 shadow-sm">
         <input type="text" name="keyword" class="form-control form-control-lg"
-               placeholder="Search titles..." value="<%= keyword %>" aria-label="Search">
+               placeholder="Search titles..." value="<%= safeKeyword %>" aria-label="Search">
         <button class="btn btn-primary btn-lg" type="submit">Search</button>
-        <% if (keyword && keyword.trim() !== '') { %>
+        <% if (safeKeyword && safeKeyword.trim() !== '') { %>
             <a href="<%= currentPath %>" class="btn btn-outline-secondary btn-lg">Clear</a>
         <% } %>
     </form>
 
-    <div class="row g-4">
+    <!-- Genre Buttons -->
+    <div class="d-flex flex-wrap justify-content-center gap-2 mb-5">
+        <% 
+        const allGenres = [
+            "Mythology","Action","Drama","Crime","Thriller","Political","Mystery",
+            "Family","Psychological","Sci-Fi","Romance","Comedy","Horror","Adventure",
+            "Fantasy","Animation","Slice-of-Life","Military Drama","Biography","Music",
+            "Business","Sports","Reality","Medical","Supernatural","Historical",
+            "Survival","Spy","Technology","Education","Social Experiment"
+        ];
+        allGenres.forEach(g => { 
+        %>
+            <a href="/genre/<%= g.toLowerCase().replace(/\s+/g, '-') %>?type=<%= contentType %>"
+               class="btn btn-outline-primary btn-sm px-3 py-2 <%= safeGenre.toLowerCase() === g.toLowerCase() ? 'active' : '' %>">
+               <%= g %>
+            </a>
+        <% }) %>
+    </div>
 
+    <div class="row g-4">
         <!-- No Results -->
         <% if (contents.length === 0) { %>
             <div class="col-12">
                 <div class="no-results text-center">
-                    <p class="lead">😕 No <%= contentType === 'MOVIE' ? 'movies' : 'web series' %> found</p>
-                    <% if (keyword && keyword.trim() !== '') { %>
-                        <p>Your search for "<strong><%= keyword %></strong>" yielded no results.</p>
+                    <p class="lead">😕 No <%= contentType === 'movies' ? 'movies' : 'web series' %> found</p>
+                    <% if (safeKeyword && safeKeyword.trim() !== '') { %>
+                        <p>Your search for "<strong><%= safeKeyword %></strong>" yielded no results.</p>
                     <% } %>
                     <a href="<%= currentPath %>" class="btn btn-sm btn-info">Browse All</a>
                 </div>
@@ -114,7 +125,7 @@
             <nav aria-label="Pagination">
                 <ul class="pagination justify-content-center flex-wrap">
                     <li class="page-item <%= currentPage === 0 ? 'disabled' : '' %>">
-                        <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.max(0, currentPage - 1) %><%= keyword ? '&keyword=' + keyword : '' %>">Prev</a>
+                        <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.max(0, currentPage - 1) %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>">Prev</a>
                     </li>
 
                     <% 
@@ -123,12 +134,12 @@
                     for (let i = startPage; i <= endPage; i++) { 
                     %>
                         <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                            <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= i %><%= keyword ? '&keyword=' + keyword : '' %>"><%= i + 1 %></a>
+                            <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= i %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>"><%= i + 1 %></a>
                         </li>
                     <% } %>
 
                     <li class="page-item <%= currentPage + 1 >= totalPages ? 'disabled' : '' %>">
-                        <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.min(totalPages - 1, currentPage + 1) %><%= keyword ? '&keyword=' + keyword : '' %>">Next</a>
+                        <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.min(totalPages - 1, currentPage + 1) %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>">Next</a>
                     </li>
                 </ul>
             </nav>
