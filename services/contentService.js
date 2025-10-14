@@ -1,4 +1,3 @@
-// services/contentService.js
 import sql from "../config/db.js"; // Supabase postgres client
 
 // ------------------ CONTENT ------------------
@@ -37,7 +36,6 @@ export const countContentsByTypeAndKeyword = async (type, keyword = "") => {
   }
 };
 
-
 // Search contents by name
 export const searchContents = async (keyword, page = 0, size = 10) => {
   return findByName(keyword, page, size);
@@ -53,10 +51,8 @@ export const searchContentsByTypeAndKeyword = async (type, keyword, page = 0, si
   return findByTypeAndName(type, keyword, page, size);
 };
 
-// Find by ID
 // Find content by ID with all links
 export const findById = async (contentId) => {
-  // Fetch the content
   const contentResult = await sql`
     SELECT * FROM content WHERE id = ${contentId}
   `;
@@ -64,12 +60,11 @@ export const findById = async (contentId) => {
 
   if (!content) return null;
 
-  // Fetch associated links
   const linksResult = await sql`
     SELECT * FROM links WHERE content_id = ${contentId} ORDER BY id ASC
   `;
 
-  content.links = linksResult; // attach links to content object
+  content.links = linksResult;
   return content;
 };
 
@@ -85,7 +80,6 @@ export const saveContent = async (content) => {
 
   const contentId = inserted[0].id;
 
-  // Insert links if provided
   if (content.links && content.links.length > 0) {
     for (const link of content.links) {
       await sql`
@@ -153,7 +147,7 @@ export const findByIdAndType = async (id, type) => {
     SELECT * FROM content
     WHERE id = ${id} AND type = ${type}
   `;
-  return result[0]; // single object
+  return result[0];
 };
 
 // 3. Find by type with pagination
@@ -180,12 +174,58 @@ export const findByTypeAndName = async (type, keyword, page = 0, size = 10) => {
   return result;
 };
 
-
+// 5. Count contents by type only
 export async function countContentsByType(type) {
-    const result = await sql`
+  const result = await sql`
     SELECT COUNT(*) as total
     FROM content
     WHERE type = ${type}
   `;
-  return result[0].total; // total number of rows for this type
+  return parseInt(result[0].total, 10);
 }
+
+/* ===========================================================
+   GENRE-BASED QUERIES (NEW)
+   =========================================================== */
+
+// Get contents by genre & type (with pagination)
+export const getContentsByGenreAndType = async (genre, type, page = 0, size = 10) => {
+  const { limit, offset } = paginate(page, size);
+  const result = await sql`
+    SELECT * FROM content
+    WHERE type = ${type} AND LOWER(genre) LIKE LOWER(${`%${genre}%`})
+    ORDER BY id DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  return result;
+};
+
+// Count contents by genre & type
+export const countContentsByGenreAndType = async (genre, type) => {
+  const result = await sql`
+    SELECT COUNT(*) FROM content
+    WHERE type = ${type} AND LOWER(genre) LIKE LOWER(${`%${genre}%`})
+  `;
+  return parseInt(result[0].count, 10);
+};
+
+// Get contents by genre (all types)
+export const getContentsByGenre = async (genre, page = 0, size = 10) => {
+  const { limit, offset } = paginate(page, size);
+  const result = await sql`
+    SELECT * FROM content
+    WHERE LOWER(genre) LIKE LOWER(${`%${genre}%`})
+    ORDER BY id DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  return result;
+};
+
+// Count contents by genre (all types)
+export const countContentsByGenre = async (genre) => {
+  const result = await sql`
+    SELECT COUNT(*) FROM content
+    WHERE LOWER(genre) LIKE LOWER(${`%${genre}%`})
+  `;
+  return parseInt(result[0].count, 10);
+};
