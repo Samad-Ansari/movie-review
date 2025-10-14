@@ -22,9 +22,7 @@ router.get(["/", "/movies"], async (req, res) => {
   try {
     const page = parseIntParam(req.query.page, 0);
     const keyword = req.query.keyword || "";
-    const size = 16;
-
-    await visitService.trackVisit(req, "movies-list");
+    const size = 12;
 
     const contents = keyword
       ? await contentService.searchContentsByTypeAndKeyword("MOVIE", keyword, page, size)
@@ -58,9 +56,7 @@ router.get("/webseries", async (req, res) => {
   try {
     const page = parseIntParam(req.query.page, 0);
     const keyword = req.query.keyword || "";
-    const size = 16;
-
-    await visitService.trackVisit(req, "webseries-list");
+    const size = 12;
 
     const contents = keyword
       ? await contentService.searchContentsByTypeAndKeyword("WEBSERIES", keyword, page, size)
@@ -93,10 +89,11 @@ router.get("/webseries", async (req, res) => {
 router.get("/movies/:id/:slug", async (req, res) => {
   try {
     const id = req.params.id;
-    await visitService.trackVisit(req, `movie-detail-${id}`);
 
     const movie = await contentService.findByIdAndType(id, "MOVIE");
     if (!movie) return res.render("default_page");
+
+    await visitService.trackVisit(req, `movie-detail-${movie.name}`);
 
     await renderPage(res, "contentdetail", {
       typeName: movie.type.toLowerCase(),
@@ -118,10 +115,11 @@ router.get("/movies/:id/:slug", async (req, res) => {
 router.get("/webseries/:id/:slug", async (req, res) => {
   try {
     const id = req.params.id;
-    await visitService.trackVisit(req, `webseries-detail-${id}`);
 
     const series = await contentService.findByIdAndType(id, "WEBSERIES");
     if (!series) return res.render("default_page");
+
+    await visitService.trackVisit(req, `movie-detail-${series.name}`);
 
     await renderPage(res, "contentdetail", {
       typeName: series.type.toLowerCase(),
@@ -141,7 +139,6 @@ router.get("/webseries/:id/:slug", async (req, res) => {
 
 /* -------------------------- STATIC PAGES -------------------------- */
 router.get("/about", async (req, res) => {
-  try { await visitService.trackVisit(req, "about"); } catch {}
   await renderPage(res, "about", { currentPath: req.originalUrl }, {
     title: "About Us | MovieAurSeries",
     description: "Learn more about MovieAurSeries, your go-to platform for movies and web series.",
@@ -149,7 +146,6 @@ router.get("/about", async (req, res) => {
 });
 
 router.get("/contact", async (req, res) => {
-  try { await visitService.trackVisit(req, "contact"); } catch {}
   await renderPage(res, "contact", { currentPath: req.originalUrl }, {
     title: "Contact Us | MovieAurSeries",
     description: "Have questions or suggestions? Contact MovieAurSeries support.",
@@ -157,7 +153,6 @@ router.get("/contact", async (req, res) => {
 });
 
 router.get("/privacy", async (req, res) => {
-  try { await visitService.trackVisit(req, "privacy"); } catch {}
   await renderPage(res, "privacy", { currentPath: req.originalUrl }, {
     title: "Privacy Policy | MovieAurSeries",
     description: "Read our privacy policy to understand how MovieAurSeries handles your data.",
@@ -198,6 +193,49 @@ router.get("/data/visits", async (req, res) => {
   }
 });
 
+/* -------------------------- GET BY GENRE -------------------------- */
+router.get("/genre/:genre", async (req, res) => {
+  try {
+    const genreParam = req.params.genre;
+    const type = (req.query.type || "").toUpperCase(); // MOVIE or WEBSERIES
+    const page = parseIntParam(req.query.page, 0);
+    const size = 12;
+
+    let contents, totalCount;
+
+    if (type === "MOVIE" || type === "WEBSERIES") {
+      contents = await contentService.getContentsByGenreAndType(genreParam, type, page, size);
+      totalCount = await contentService.countContentsByGenreAndType(genreParam, type);
+    } else {
+      // if no type specified, fetch from both
+      contents = await contentService.getContentsByGenre(genreParam, page, size);
+      totalCount = await contentService.countContentsByGenre(genreParam);
+    }
+
+    const totalPages = Math.ceil(totalCount / size);
+
+    // Dynamic meta title + description
+    const formattedGenre = genreParam.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+    await renderPage(res, "content", {
+      contents,
+      currentPage: page,
+      totalPages,
+      currentPath: req.originalUrl,
+      genre: formattedGenre,
+      contentType: type ? type.toLowerCase() : "all",
+    }, {
+      title: `${formattedGenre} ${type ? type === "MOVIE" ? "Movies" : "Web Series" : "Content"} | MovieAurSeries`,
+      description: `Explore top-rated ${formattedGenre} ${type ? type.toLowerCase() : ""} on MovieAurSeries. Watch and download in HD.`,
+      keywords: `${formattedGenre}, ${type || "movies, webseries"}, Hindi dubbed, MovieAurSeries`,
+    });
+  } catch (err) {
+    console.error("Error fetching by genre:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+
 /* -------------------------- FALLBACK -------------------------- */
 router.get("*", (req, res) => {
   renderPage(res, "default_page", {}, {
@@ -207,4 +245,3 @@ router.get("*", (req, res) => {
 });
 
 export default router;
-
