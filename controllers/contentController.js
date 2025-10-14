@@ -22,7 +22,7 @@ router.get(["/", "/movies"], async (req, res) => {
   try {
     const page = parseIntParam(req.query.page, 0);
     const keyword = req.query.keyword || "";
-    const size = 8;
+    const size = 16;
 
     await visitService.trackVisit(req, "movies-list");
 
@@ -58,7 +58,7 @@ router.get("/webseries", async (req, res) => {
   try {
     const page = parseIntParam(req.query.page, 0);
     const keyword = req.query.keyword || "";
-    const size = 8;
+    const size = 16;
 
     await visitService.trackVisit(req, "webseries-list");
 
@@ -207,3 +207,4 @@ router.get("*", (req, res) => {
 });
 
 export default router;
+
