@@ -86,7 +86,7 @@ router.get("/webseries", async (req, res) => {
 });
 
 /* -------------------------- MOVIE DETAIL -------------------------- */
-router.get("/movies/:id/:slug", async (req, res) => {
+router.get("/movie/:id/:slug", async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -197,51 +197,92 @@ router.get("/data/visits", async (req, res) => {
 router.get("/genre/:genre", async (req, res) => {
   try {
     const genreParam = req.params.genre;
-    const type = (req.query.type || "").toUpperCase(); // MOVIE or WEBSERIES
     const page = parseIntParam(req.query.page, 0);
     const size = 12;
 
-    let contents, totalCount;
-
-    if (type === "MOVIE" || type === "WEBSERIES") {
-      contents = await contentService.getContentsByGenreAndType(genreParam, type, page, size);
-      totalCount = await contentService.countContentsByGenreAndType(genreParam, type);
-    } else {
-      // if no type specified, fetch from both
-      contents = await contentService.getContentsByGenre(genreParam, page, size);
-      totalCount = await contentService.countContentsByGenre(genreParam);
-    }
-
+    // Fetch all contents (both movies + webseries) by genre
+    const contents = await contentService.getContentsByGenre(genreParam, page, size);
+    const totalCount = await contentService.countContentsByGenre(genreParam);
     const totalPages = Math.ceil(totalCount / size);
 
-    // Dynamic meta title + description
-    const formattedGenre = genreParam.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    // Format genre for display (e.g., "sci-fi" → "Sci Fi")
+    const formattedGenre = genreParam
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
 
-    await renderPage(res, "content", {
-      contents,
-      currentPage: page,
-      totalPages,
-      currentPath: req.originalUrl,
-      genre: formattedGenre,
-      contentType: type ? type.toLowerCase() : "all",
-    }, {
-      title: `${formattedGenre} ${type ? type === "MOVIE" ? "Movies" : "Web Series" : "Content"} | MovieAurSeries`,
-      description: `Explore top-rated ${formattedGenre} ${type ? type.toLowerCase() : ""} on MovieAurSeries. Watch and download in HD.`,
-      keywords: `${formattedGenre}, ${type || "movies, webseries"}, Hindi dubbed, MovieAurSeries`,
-    });
+    await renderPage(
+      res,
+      "content",
+      {
+        contents,
+        currentPage: page,
+        totalPages,
+        currentPath: req.originalUrl,
+        genre: formattedGenre,
+        contentType: "all", // no filter by type
+      },
+      {
+        title: `${formattedGenre} Movies & Web Series | MovieAurSeries`,
+        description: `Explore top-rated ${formattedGenre} movies and web series on MovieAurSeries. Watch and download in HD quality.`,
+        keywords: `${formattedGenre}, movies, webseries, Hindi dubbed, MovieAurSeries`,
+      }
+    );
   } catch (err) {
     console.error("Error fetching by genre:", err);
     res.status(500).send("Internal Server Error");
   }
 });
 
+router.get("/search", async (req, res) => {
+  try {
+    const page = parseIntParam(req.query.page, 0);
+    const keyword = req.query.keyword?.trim() || "";
+    const size = 12;
+
+    // Fetch both types in parallel
+    const [movies, webseries] = await Promise.all([
+      contentService.searchContentsByTypeAndKeyword("MOVIE", keyword, page, size),
+      contentService.searchContentsByTypeAndKeyword("WEBSERIES", keyword, page, size)
+    ]);
+
+    // Combine both results
+    const contents = [...movies, ...webseries];
+
+    // For pagination (optional): total count from both
+    const [movieCount, webCount] = await Promise.all([
+      contentService.countContentsByTypeAndKeyword("MOVIE", keyword),
+      contentService.countContentsByTypeAndKeyword("WEBSERIES", keyword)
+    ]);
+
+    const totalCount = movieCount + webCount;
+    const totalPages = Math.ceil(totalCount / size);
+
+    await renderPage(res, "content", {
+      contents,
+      currentPage: page,
+      keyword,
+      totalPages,
+      contentType: "all",
+      currentPath: "/search",
+    }, {
+      title: `Search Results for "${keyword}" | MovieAurSeries`,
+      description: `Find the best movies and web series for "${keyword}" on MovieAurSeries.`,
+      keywords: `${keyword}, movies, webseries, Hindi dubbed, HD, MovieAurSeries`,
+    });
+  } catch (err) {
+    console.error("Error in universal search:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
 
 /* -------------------------- FALLBACK -------------------------- */
 router.get("*", (req, res) => {
+  console.warn("No matching route for:", req.originalUrl); // helpful for debugging
   renderPage(res, "default_page", {}, {
     title: "Page Not Found | MovieAurSeries",
     description: "Oops! The page you are looking for doesn’t exist. Explore latest movies instead.",
   });
 });
+
 
 export default router;
