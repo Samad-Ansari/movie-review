@@ -2,17 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-       <title>Free Movies Aur Webseries</title>
+    <title>Free Movies Aur Webseries</title>
     <link rel="icon" type="image/x-icon" href="/icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <!-- SEO Meta Tags -->
-    <meta name="description" content="<%= content.plot_summary ? content.plot_summary.substring(0, 155) : 'Watch ' + content.name + ' on MovieAurSeries. Explore ratings, genres, and story summaries for top movies and web series.' %>">
-    <meta name="keywords" content="<%= content.name %>, <%= typeName === 'MOVIE' ? 'movie' : 'web series' %>, <%= content.genre %>, Hindi Dubbed, Watch Online, MovieAurSeries, Ratings, Reviews">
+    <% 
+      const safeRating = parseFloat(content.rating);
+      const displayRating = !isNaN(safeRating) ? safeRating.toFixed(1) : 'N/A';
+      const plotDesc = content.plot_summary ? content.plot_summary.substring(0, 155) : 'Watch ' + content.name + ' on MovieAurSeries.';
+    %>
+    <meta name="description" content="<%= plotDesc %>">
+    <meta name="keywords" content="<%= content.name %>, <%= typeName === 'MOVIE' ? 'movie' : 'web series' %>, <%= content.genre || 'Drama' %>, Hindi Dubbed, Watch Online, MovieAurSeries, Ratings, Reviews">
     <meta name="author" content="MovieAurSeries">
     <meta property="og:title" content="<%= content.name %> - <%= typeName === 'MOVIE' ? 'Movie' : 'Web Series' %> | MovieAurSeries">
-    <meta property="og:description" content="<%= content.plot_summary ? content.plot_summary.substring(0, 155) : 'Explore details, genres, and ratings of ' + content.name + ' on MovieAurSeries.' %>">
-    <meta property="og:image" content="<%= content.poster_url %>">
+    <meta property="og:description" content="<%= plotDesc %>">
+    <meta property="og:image" content="<%= content.poster_url || '/default-thumbnail.jpg' %>">
     <meta property="og:url" content="https://movieaurseries.xyz/<%= typeName.toLowerCase() %>/<%= content.id %>">
     <meta property="og:type" content="website">
     <meta name="robots" content="index, follow">
@@ -24,11 +29,11 @@
       "@context": "https://schema.org",
       "@type": "<%= typeName === 'MOVIE' ? 'Movie' : 'TVSeries' %>",
       "name": "<%= content.name %>",
-      "image": "<%= content.poster_url %>",
-      "genre": "<%= content.genre %>",
+      "image": "<%= content.poster_url || '/default-thumbnail.jpg' %>",
+      "genre": "<%= content.genre || 'Drama' %>",
       "aggregateRating": {
         "@type": "AggregateRating",
-        "ratingValue": "<%= content.rating.toFixed(1) %>",
+        "ratingValue": "<%= displayRating %>",
         "bestRating": "10"
       },
       "datePublished": "<%= content.release_year || '2025' %>",
@@ -81,7 +86,7 @@
         <article class="row g-4 details-container">
             <!-- Poster -->
             <div class="col-lg-4 col-md-5 col-12 text-center">
-                <img src="<%= content.poster_url %>" 
+                <img src="<%= content.poster_url || '/default-thumbnail.jpg' %>" 
                      class="img-fluid poster-shadow" 
                      alt="<%= content.name %> Poster" 
                      style="width: 100%; object-fit: cover; max-height: 500px;" 
@@ -93,11 +98,11 @@
                 <h1 class="display-5 fw-bold mb-1"><%= content.name %></h1>
                 <p class="text-muted border-bottom pb-3 mb-3">
                     <span class="fw-bold me-2"><%= typeName === 'MOVIE' ? 'Movie Details' : 'Web Series Details' %></span>
-                    <span class="badge bg-warning text-dark fs-6">⭐ <%= content.rating.toFixed(1) %></span>
+                    <span class="badge bg-warning text-dark fs-6">⭐ <%= displayRating %></span>
                 </p>
 
                 <div class="d-flex flex-wrap gap-2 mb-4">
-                    <span class="badge text-bg-primary fs-6"><%= content.genre %></span>
+                    <span class="badge text-bg-primary fs-6"><%= content.genre || 'Unknown' %></span>
                     <% if (content.release_year) { %>
                         <span class="badge text-bg-secondary fs-6">Release: <%= content.release_year %></span>
                     <% } %>
@@ -107,7 +112,7 @@
                 </div>
 
                 <h3 class="h5 mt-4 text-primary">Plot Summary</h3>
-                <p class="lead"><%= content.plot_summary %></p>
+                <p class="lead"><%= content.plot_summary || 'No plot summary available.' %></p>
 
                 <!-- Actions -->
                 <div class="mt-5 pt-3 border-top d-flex flex-wrap gap-2">
@@ -132,4 +137,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
