@@ -4,16 +4,17 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import { loadData } from "./utils/loadData.js";
+
 
 import contentRouter from "./controllers/contentController.js";
-import visitRouter from "./controllers/visitController.js";
 import adminRouter from "./controllers/adminController.js";
 import downloadRouter from "./controllers/downloadController.js";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // --- Utilities to get __dirname in ES module ---
 const __filename = fileURLToPath(import.meta.url);
@@ -32,10 +33,13 @@ app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+// Load CSV data before routes
+await loadData(); // run once at startup before starting server
+
+
 // --- Routes ---
 app.use("/admin", adminRouter); 
 app.use("/file", downloadRouter);
-app.use("/visits", visitRouter); 
 app.use("/", contentRouter);
 
 // --- Start Server ---
