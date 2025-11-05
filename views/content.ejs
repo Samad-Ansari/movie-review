@@ -1,41 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-    <!-- ✅ Dynamic SEO Meta Tags -->
-    <title>Free Movies Aur Webseries</title>
-    <meta name="description" content="<%= pageDescription || 'Watch and explore the latest Hindi dubbed movies and web series online in HD on MovieAurSeries.' %>">
-    <meta name="keywords" content="<%= pageKeywords || 'movies, web series, hindi dubbed, HD, stream' %>">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/x-icon" href="/icon.png">
+  <!-- ✅ Dynamic SEO Meta Tags -->
+  <title>Free Movies Aur Webseries</title>
+  <meta name="description" content="<%= pageDescription || 'Watch and explore the latest Hindi dubbed movies and web series online in HD on MovieAurSeries.' %>">
+  <meta name="keywords" content="<%= pageKeywords || 'movies, web series, hindi dubbed, HD, stream' %>">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/icon.png">
 
-    <!-- ✅ Social Sharing -->
-    <meta property="og:title" content="<%= pageTitle || 'MovieAurSeries - Explore Movies & Web Series' %>">
-    <meta property="og:description" content="<%= pageDescription || 'Watch Hindi dubbed movies and web series online in HD.' %>">
-    <meta property="og:image" content="<%= contents?.[0]?.poster_url || '/default-thumbnail.jpg' %>">
-    <meta property="og:url" content="https://movieaurseries.xyz<%= currentPath %>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
+  <!-- ✅ Social Sharing -->
+  <meta property="og:title" content="<%= pageTitle || 'MovieAurSeries - Explore Movies & Web Series' %>">
+  <meta property="og:description" content="<%= pageDescription || 'Watch Hindi dubbed movies and web series online in HD.' %>">
+  <meta property="og:image" content="<%= contents?.[0]?.poster_url || '/default-thumbnail.jpg' %>">
+  <meta property="og:url" content="https://movieaurseries.xyz<%= currentPath %>">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
 
-    <!-- ✅ Canonical URL -->
-    <link rel="canonical" href="https://movieaurseries.xyz<%= currentPath %>">
+  <!-- ✅ Canonical URL -->
+  <link rel="canonical" href="https://movieaurseries.xyz<%= currentPath %>">
 
-    <!-- ✅ Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- ✅ Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-        .card-img-top { width: 100%; height: 350px; object-fit: cover; }
-        .transition-hover:hover { transform: scale(1.03); transition: transform 0.3s ease-in-out; }
-        .no-results { padding: 3rem; border: 1px dashed #ced4da; border-radius: 0.5rem; background-color: #f8f9fa; }
-        @media (max-width: 768px) { .card-img-top { height: 250px; } }
-        @media (max-width: 576px) {
-            .card-img-top { height: 200px; }
-            .card-title { font-size: 1rem; }
-            .card-text { font-size: 0.85rem; }
-            .btn { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
-        }
-    </style>
+  <style>
+    .card-img-top { width: 100%; height: 350px; object-fit: cover; }
+    .transition-hover:hover { transform: scale(1.03); transition: transform 0.3s ease-in-out; }
+    .no-results { padding: 3rem; border: 1px dashed #ced4da; border-radius: 0.5rem; background-color: #f8f9fa; }
+    @media (max-width: 768px) { .card-img-top { height: 250px; } }
+    @media (max-width: 576px) {
+      .card-img-top { height: 200px; }
+      .card-title { font-size: 1rem; }
+      .card-text { font-size: 0.85rem; }
+      .btn { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
+    }
+  </style>
 </head>
 <body class="bg-light">
 
@@ -43,123 +43,119 @@
 <%- include('partials/navbar', { currentPage: contentType.toLowerCase() }) %>
 
 <div class="container py-5">
+  <h1 class="mb-4 text-center text-primary">🎬 Movies 📺 Web Series</h1>
 
-    <!-- Page Title -->
-    <h1 class="mb-4 text-center text-primary">
-       🎬 Movies 📺 Web Series
-    </h1>
+  <% const safeKeyword = typeof keyword !== 'undefined' ? keyword : ''; %>
+  <% const safeGenre = typeof genre !== 'undefined' ? genre : ''; %>
 
-    <% const safeKeyword = typeof keyword !== 'undefined' ? keyword : ''; %>
-    <% const safeGenre = typeof genre !== 'undefined' ? genre : ''; %>
+  <!-- Search -->
+  <form method="get" action="/search" class="input-group mb-5 shadow-sm">
+    <input type="text" name="keyword" class="form-control form-control-lg"
+           placeholder="Search titles..." value="<%= safeKeyword %>" aria-label="Search">
+    <button class="btn btn-primary btn-lg" type="submit">Search</button>
+    <% if (safeKeyword && safeKeyword.trim() !== '') { %>
+      <a href="<%= currentPath %>" class="btn btn-outline-secondary btn-lg">Clear</a>
+    <% } %>
+  </form>
 
-    <!-- Search Form -->
-    <form method="get" action="/search" class="input-group mb-5 shadow-sm">
-        <input type="text" name="keyword" class="form-control form-control-lg"
-               placeholder="Search titles..." value="<%= safeKeyword %>" aria-label="Search">
-        <button class="btn btn-primary btn-lg" type="submit">Search</button>
-        <% if (safeKeyword && safeKeyword.trim() !== '') { %>
-            <a href="<%= currentPath %>" class="btn btn-outline-secondary btn-lg">Clear</a>
-        <% } %>
-    </form>
-
-        <!-- Genre Buttons -->
-<div class="d-flex flex-wrap justify-content-center gap-2 mb-5">
-  <%
-    const allGenres = [
-      "Mythology","Action","Drama","Crime","Thriller","Political","Mystery",
-      "Family","Psychological","Sci-Fi","Romance","Comedy","Horror","Adventure",
-      "Fantasy","Animation","Slice-of-Life","Military Drama","Biography","Music",
-      "Business","Sports","Reality","Medical","Supernatural","Historical",
-      "Survival","Spy","Technology","Education","Social Experiment"
-    ];
-
-    // ✅ Don't redeclare safeGenre — it's already declared above.
-    allGenres.forEach(g => {
-      const genreSlug = g.toLowerCase().replace(/\s+/g, '-');
-  %>
+  <!-- Genres -->
+  <div class="d-flex flex-wrap justify-content-center gap-2 mb-5">
+    <% 
+      const allGenres = [
+        "Mythology","Action","Drama","Crime","Thriller","Political","Mystery",
+        "Family","Psychological","Sci-Fi","Romance","Comedy","Horror","Adventure",
+        "Fantasy","Animation","Slice-of-Life","Military Drama","Biography","Music",
+        "Business","Sports","Reality","Medical","Supernatural","Historical",
+        "Survival","Spy","Technology","Education","Social Experiment"
+      ];
+      allGenres.forEach(g => {
+        const genreSlug = g.toLowerCase().replace(/\s+/g, '-');
+    %>
       <a href="/genre/<%= genreSlug %>"
          class="btn btn-outline-primary btn-sm px-3 py-2 <%= safeGenre.toLowerCase() === g.toLowerCase() ? 'active' : '' %>">
          <%= g %>
       </a>
-  <% }) %>
-</div>
+    <% }) %>
+  </div>
 
-
-
-    <div class="row g-4">
-        <!-- No Results -->
-        <% if (contents.length === 0) { %>
-            <div class="col-12">
-                <div class="no-results text-center">
-                    <p class="lead">😕 No <%= contentType === 'movies' ? 'movies' : 'web series' %> found</p>
-                    <% if (safeKeyword && safeKeyword.trim() !== '') { %>
-                        <p>Your search for "<strong><%= safeKeyword %></strong>" yielded no results.</p>
-                    <% } %>
-                    <a href="<%= currentPath %>" class="btn btn-sm btn-info">Browse All</a>
-                </div>
-            </div>
-        <% } %>
-
-        <!-- Content Cards -->
-        <% contents.forEach(content => { %>
-            <div class="col-xl-3 col-lg-3 col-md-4 col-sm-6">
-                <div class="card h-100 shadow-sm transition-hover">
-                    <img src="<%= content.poster_url %>" class="card-img-top"
-                         alt="<%= content.name %> Poster" loading="lazy">
-                    <div class="card-body d-flex flex-column text-center">
-                        <h5 class="card-title text-truncate"><%= content.name %></h5>
-                        <p class="card-text mt-auto">
-                            <span class="badge bg-warning text-dark me-2">⭐ <%= content.rating.toFixed(1) %></span>
-                            <span class="badge bg-info text-dark"><%= content.genre %></span>
-                            <% if (content.releaseYear) { %>
-                                <span class="badge bg-secondary text-light">Release: <%= content.releaseYear %></span>
-                            <% } %>
-                        </p>
-                    </div>
-
-                    <div class="card-footer text-center border-0 bg-white">
-                       <a href="/<%= content.type.toLowerCase() %>/<%= content.id %>/<%= encodeURIComponent(content.name) %>" class="btn btn-primary w-100">
-                      View Details
-                    </a>
-                </div>
-
-                
-                </div>
-            </div>
-        <% }) %>
-    </div>
-
-    <!-- Pagination -->
-    <% if (totalPages > 1) { %>
-        <div class="mt-5">
-            <nav aria-label="Pagination">
-                <ul class="pagination justify-content-center flex-wrap">
-                    <li class="page-item <%= currentPage === 0 ? 'disabled' : '' %>">
-                        <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.max(0, currentPage - 1) %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>">Prev</a>
-                    </li>
-
-                    <% 
-                    let startPage = Math.max(currentPage - 2, 0);
-                    let endPage = Math.min(currentPage + 2, totalPages - 1);
-                    for (let i = startPage; i <= endPage; i++) { 
-                    %>
-                        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                            <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= i %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>"><%= i + 1 %></a>
-                        </li>
-                    <% } %>
-
-                    <li class="page-item <%= currentPage + 1 >= totalPages ? 'disabled' : '' %>">
-                        <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.min(totalPages - 1, currentPage + 1) %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>">Next</a>
-                    </li>
-                </ul>
-            </nav>
+  <div class="row g-4">
+    <!-- No Results -->
+    <% if (!contents || contents.length === 0) { %>
+      <div class="col-12">
+        <div class="no-results text-center">
+          <p class="lead">😕 No <%= contentType === 'movies' ? 'movies' : 'web series' %> found</p>
+          <% if (safeKeyword && safeKeyword.trim() !== '') { %>
+            <p>Your search for "<strong><%= safeKeyword %></strong>" yielded no results.</p>
+          <% } %>
+          <a href="<%= currentPath %>" class="btn btn-sm btn-info">Browse All</a>
         </div>
+      </div>
     <% } %>
+
+    <!-- Content Cards -->
+    <% contents.forEach(content => { 
+         const rating = parseFloat(content.rating);
+         const displayRating = !isNaN(rating) ? rating.toFixed(1) : 'N/A';
+    %>
+      <div class="col-xl-3 col-lg-3 col-md-4 col-sm-6">
+        <div class="card h-100 shadow-sm transition-hover">
+          <img src="<%= content.poster_url || '/default-thumbnail.jpg' %>" 
+               class="card-img-top" alt="<%= content.name %> Poster" loading="lazy">
+
+          <div class="card-body d-flex flex-column text-center">
+            <h5 class="card-title text-truncate"><%= content.name %></h5>
+            <p class="card-text mt-auto">
+              <span class="badge bg-warning text-dark me-2">⭐ <%= displayRating %></span>
+              <span class="badge bg-info text-dark"><%= content.genre || 'Unknown' %></span>
+              <% if (content.releaseYear) { %>
+                <span class="badge bg-secondary text-light">
+                  Release: <%= content.releaseYear %>
+                </span>
+              <% } %>
+            </p>
+          </div>
+
+          <div class="card-footer text-center border-0 bg-white">
+            <a href="/<%= (content.type || 'movie').toLowerCase() %>/<%= content.id %>/<%= encodeURIComponent(content.name) %>"
+               class="btn btn-primary w-100">
+               View Details
+            </a>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+    <div class="mt-5">
+      <nav aria-label="Pagination">
+        <ul class="pagination justify-content-center flex-wrap">
+          <li class="page-item <%= currentPage === 0 ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.max(0, currentPage - 1) %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>">Prev</a>
+          </li>
+
+          <% 
+            let startPage = Math.max(currentPage - 2, 0);
+            let endPage = Math.min(currentPage + 2, totalPages - 1);
+            for (let i = startPage; i <= endPage; i++) { 
+          %>
+            <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+              <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= i %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>"><%= i + 1 %></a>
+            </li>
+          <% } %>
+
+          <li class="page-item <%= currentPage + 1 >= totalPages ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= currentPath.split('?')[0] %>?page=<%= Math.min(totalPages - 1, currentPage + 1) %><%= safeKeyword ? '&keyword=' + safeKeyword : '' %>">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  <% } %>
 </div>
 
 <!-- Footer -->
 <%- include('partials/footer') %>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
