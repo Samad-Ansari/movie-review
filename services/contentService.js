@@ -1,231 +1,286 @@
-import sql from "../config/db.js"; // Supabase postgres client
+import fs from "fs";
+import { parse } from "csv-parse/sync";
+import { stringify } from "csv-stringify/sync";
 
-// ------------------ CONTENT ------------------
+const CONTENT_FILE = "./data/content_rows.csv";
+const LINKS_FILE = "./data/links_rows.csv";
 
-// Pagination helper
+let cache = {
+  contents: [],
+  links: [],
+  loaded: false,
+};
+
+function readCSV(file) {
+  if (!fs.existsSync(file)) return [];
+  const data = fs.readFileSync(file, "utf8");
+  return parse(data, { columns: true });
+}
+
+function writeCSV(file, data) {
+  const csv = stringify(data, { header: true });
+  fs.writeFileSync(file, csv, "utf8");
+}
+
+export function loadData(forceReload = false) {
+  if (!cache.loaded || forceReload) {
+    console.log("🔁 Loading CSV data from disk...");
+    cache.contents = readCSV(CONTENT_FILE);
+    cache.links = readCSV(LINKS_FILE);
+    cache.loaded = true;
+  } else {
+    // console.log("✅ Using cached CSV data");
+  }
+
+  return cache;
+}
+
+// ------------------ HELPERS ------------------
+
 const paginate = (page, size) => {
   const limit = size ? +size : 10;
   const offset = page ? page * limit : 0;
   return { limit, offset };
 };
 
+// ------------------ CORE METHODS ------------------
+
 // Get all contents with pagination
 export const getAllContents = async (page = 0, size = 10) => {
+  const { contents } = loadData();
   const { limit, offset } = paginate(page, size);
-  const result = await sql`
-    SELECT * FROM content
-    ORDER BY id DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-  return result;
+  return contents.slice(offset, offset + limit);
 };
 
-// Get total count of movies (optionally filter by keyword)
+// Count by type + keyword
 export const countContentsByTypeAndKeyword = async (type, keyword = "") => {
-  if (keyword) {
-    const result = await sql`
-      SELECT COUNT(*) FROM content
-      WHERE type = ${type} AND LOWER(name) LIKE '%' || LOWER(${keyword}) || '%'
-    `;
-    return parseInt(result[0].count, 10);
-  } else {
-    const result = await sql`
-      SELECT COUNT(*) FROM content WHERE type = ${type}
-    `;
-    return parseInt(result[0].count, 10);
-  }
+  const { contents } = loadData();
+  return contents.filter(
+    (c) =>
+      c.type === type &&
+      c.name.toLowerCase().includes(keyword.toLowerCase())
+  ).length;
 };
 
-// Search contents by name
+// Search by name
 export const searchContents = async (keyword, page = 0, size = 10) => {
-  return findByName(keyword, page, size);
+  const { contents } = loadData();
+  const { limit, offset } = paginate(page, size);
+  const filtered = contents.filter((c) =>
+    c.name.toLowerCase().includes(keyword.toLowerCase())
+  );
+  return filtered.slice(offset, offset + limit);
 };
 
 // Get contents by type
 export const getContentsByType = async (type, page = 0, size = 10) => {
-  return findByType(type, page, size);
+  const { contents } = loadData();
+  const { limit, offset } = paginate(page, size);
+  const filtered = contents.filter((c) => c.type === type);
+  return filtered.slice(offset, offset + limit);
 };
 
-// Search contents by type + keyword
-export const searchContentsByTypeAndKeyword = async (type, keyword, page = 0, size = 10) => {
-  return findByTypeAndName(type, keyword, page, size);
+// Search by type + keyword
+export const searchContentsByTypeAndKeyword = async (
+  type,
+  keyword,
+  page = 0,
+  size = 10
+) => {
+  const { contents } = loadData();
+  const { limit, offset } = paginate(page, size);
+  const filtered = contents.filter(
+    (c) =>
+      c.type === type &&
+      c.name.toLowerCase().includes(keyword.toLowerCase())
+  );
+  return filtered.slice(offset, offset + limit);
 };
 
-// Find content by ID with all links
+// Find content by ID + links
 export const findById = async (contentId) => {
-  const contentResult = await sql`
-    SELECT * FROM content WHERE id = ${contentId}
-  `;
-  const content = contentResult[0];
-
+  const { contents, links } = loadData();
+  const content = contents.find((c) => +c.id === +contentId);
   if (!content) return null;
-
-  const linksResult = await sql`
-    SELECT * FROM links WHERE content_id = ${contentId} ORDER BY id ASC
-  `;
-
-  content.links = linksResult;
+  content.links = links.filter((l) => +l.content_id === +contentId);
   return content;
 };
 
 // Save single content (with links)
 export const saveContent = async (content) => {
-  const inserted = await sql`
-    INSERT INTO content
-      (name, rating, genre, plot_summary, poster_url, release_year, duration, type)
-    VALUES
-      (${content.name}, ${content.rating}, ${content.genre}, ${content.plotSummary}, ${content.posterUrl}, ${content.releaseYear}, ${content.duration}, ${content.type})
-    RETURNING *;
-  `;
+  const { contents, links } = loadData();
 
-  const contentId = inserted[0].id;
+  const newId = contents.length
+    ? Math.max(...contents.map((c) => +c.id)) + 1
+    : 1;
 
-  if (content.links && content.links.length > 0) {
-    for (const link of content.links) {
-      await sql`
-        INSERT INTO links (title, link, content_id)
-        VALUES (${link.title}, ${link.link}, ${contentId});
-      `;
-    }
+  const newContent = {
+    id: newId,
+    name: content.name,
+    rating: content.rating,
+    genre: content.genre,
+    plot_summary: content.plotSummary,
+    poster_url: content.posterUrl,
+    release_year: content.releaseYear,
+    duration: content.duration,
+    type: content.type,
+  };
+
+  contents.push(newContent);
+  writeCSV(CONTENT_FILE, contents);
+
+  // Save links if any
+  if (content.links?.length) {
+    const nextLinkId = links.length
+      ? Math.max(...links.map((l) => +l.id)) + 1
+      : 1;
+
+    const newLinks = content.links.map((l, i) => ({
+      id: nextLinkId + i,
+      title: l.title,
+      link: l.link,
+      content_id: newId,
+    }));
+
+    writeCSV(LINKS_FILE, [...links, ...newLinks]);
   }
 
-  return inserted[0];
+  return newContent;
 };
 
 // Save multiple contents
-export const saveAllContent = async (contents) => {
+export const saveAllContent = async (list) => {
   const results = [];
-  for (const content of contents) {
-    const saved = await saveContent(content);
-    results.push(saved);
+  for (const item of list) {
+    results.push(await saveContent(item));
   }
   return results;
 };
 
 // Delete content by ID
 export const deleteById = async (id) => {
-  await sql`
-    DELETE FROM content WHERE id = ${id};
-  `;
+  const { contents, links } = loadData();
+  const newContents = contents.filter((c) => +c.id !== +id);
+  const newLinks = links.filter((l) => +l.content_id !== +id);
+
+  writeCSV(CONTENT_FILE, newContents);
+  writeCSV(LINKS_FILE, newLinks);
 };
 
 // Add link to content
 export const addLinkToContent = async (contentId, link) => {
-  const inserted = await sql`
-    INSERT INTO links (title, link, content_id)
-    VALUES (${link.title}, ${link.link}, ${contentId})
-    RETURNING *;
-  `;
-  return inserted[0];
+  const { links } = loadData();
+  const newId = links.length ? Math.max(...links.map((l) => +l.id)) + 1 : 1;
+
+  const newLink = {
+    id: newId,
+    title: link.title,
+    link: link.link,
+    content_id: contentId,
+  };
+
+  links.push(newLink);
+  writeCSV(LINKS_FILE, links);
+  return newLink;
 };
 
 // Delete link from content
 export const deleteLinkFromContent = async (contentId, linkId) => {
-  const result = await sql`
-    DELETE FROM links
-    WHERE id = ${linkId} AND content_id = ${contentId}
-    RETURNING *;
-  `;
-  return result.length > 0;
+  const { links } = loadData();
+  const filtered = links.filter(
+    (l) => !(+l.content_id === +contentId && +l.id === +linkId)
+  );
+  writeCSV(LINKS_FILE, filtered);
+  return filtered.length < links.length;
 };
 
 // 1. Search by name with pagination
 export const findByName = async (keyword, page = 0, size = 10) => {
+  const { contents } = loadData();
   const { limit, offset } = paginate(page, size);
-  const result = await sql`
-    SELECT * FROM content
-    WHERE LOWER(name) LIKE LOWER(${`%${keyword}%`})
-    ORDER BY id DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-  return result;
+  const filtered = contents.filter((c) =>
+    c.name.toLowerCase().includes(keyword.toLowerCase())
+  );
+  return filtered.slice(offset, offset + limit);
 };
 
 // 2. Find by id and type
 export const findByIdAndType = async (id, type) => {
-  const result = await sql`
-    SELECT * FROM content
-    WHERE id = ${id} AND type = ${type}
-  `;
-  return result[0];
+  const { contents } = loadData();
+  return contents.find((c) => +c.id === +id && c.type === type);
 };
 
 // 3. Find by type with pagination
 export const findByType = async (type, page = 0, size = 10) => {
+  const { contents } = loadData();
   const { limit, offset } = paginate(page, size);
-  const result = await sql`
-    SELECT * FROM content
-    WHERE type = ${type}
-    ORDER BY id DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-  return result;
+  const filtered = contents.filter((c) => c.type === type);
+  return filtered.slice(offset, offset + limit);
 };
 
-// 4. Find by type + keyword with pagination
+// 4. Find by type + keyword
 export const findByTypeAndName = async (type, keyword, page = 0, size = 10) => {
+  const { contents } = loadData();
   const { limit, offset } = paginate(page, size);
-  const result = await sql`
-    SELECT * FROM content
-    WHERE type = ${type} AND LOWER(name) LIKE LOWER(${`%${keyword}%`})
-    ORDER BY id DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-  return result;
+  const filtered = contents.filter(
+    (c) =>
+      c.type === type &&
+      c.name.toLowerCase().includes(keyword.toLowerCase())
+  );
+  return filtered.slice(offset, offset + limit);
 };
 
-// 5. Count contents by type only
-export async function countContentsByType(type) {
-  const result = await sql`
-    SELECT COUNT(*) as total
-    FROM content
-    WHERE type = ${type}
-  `;
-  return parseInt(result[0].total, 10);
-}
+// 5. Count contents by type
+export const countContentsByType = async (type) => {
+  const { contents } = loadData();
+  return contents.filter((c) => c.type === type).length;
+};
 
 /* ===========================================================
-   GENRE-BASED QUERIES (NEW)
+   GENRE-BASED QUERIES
    =========================================================== */
 
-// Get contents by genre & type (with pagination)
-export const getContentsByGenreAndType = async (genre, type, page = 0, size = 10) => {
+// Get contents by genre & type
+export const getContentsByGenreAndType = async (
+  genre,
+  type,
+  page = 0,
+  size = 10
+) => {
+  const { contents } = loadData();
   const { limit, offset } = paginate(page, size);
-  const result = await sql`
-    SELECT * FROM content
-    WHERE type = ${type} AND LOWER(genre) LIKE LOWER(${`%${genre}%`})
-    ORDER BY id DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-  return result;
+  const filtered = contents.filter(
+    (c) =>
+      c.type === type &&
+      c.genre.toLowerCase().includes(genre.toLowerCase())
+  );
+  return filtered.slice(offset, offset + limit);
 };
 
-// Count contents by genre & type
+// Count by genre & type
 export const countContentsByGenreAndType = async (genre, type) => {
-  const result = await sql`
-    SELECT COUNT(*) FROM content
-    WHERE type = ${type} AND LOWER(genre) LIKE LOWER(${`%${genre}%`})
-  `;
-  return parseInt(result[0].count, 10);
+  const { contents } = loadData();
+  return contents.filter(
+    (c) =>
+      c.type === type &&
+      c.genre.toLowerCase().includes(genre.toLowerCase())
+  ).length;
 };
 
 // Get contents by genre (all types)
 export const getContentsByGenre = async (genre, page = 0, size = 10) => {
+  const { contents } = loadData();
   const { limit, offset } = paginate(page, size);
-  const result = await sql`
-    SELECT * FROM content
-    WHERE LOWER(genre) LIKE LOWER(${`%${genre}%`})
-    ORDER BY id DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-  return result;
+  const filtered = contents.filter((c) =>
+    c.genre.toLowerCase().includes(genre.toLowerCase())
+  );
+  return filtered.slice(offset, offset + limit);
 };
 
-// Count contents by genre (all types)
+// Count by genre (all types)
 export const countContentsByGenre = async (genre) => {
-  const result = await sql`
-    SELECT COUNT(*) FROM content
-    WHERE LOWER(genre) LIKE LOWER(${`%${genre}%`})
-  `;
-  return parseInt(result[0].count, 10);
+  const { contents } = loadData();
+  return contents.filter((c) =>
+    c.genre.toLowerCase().includes(genre.toLowerCase())
+  ).length;
 };
