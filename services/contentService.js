@@ -76,9 +76,14 @@ export const searchContents = async (keyword, page = 0, size = 10) => {
 export const getContentsByType = async (type, page = 0, size = 10) => {
   const { contents } = loadData();
   const { limit, offset } = paginate(page, size);
-  const filtered = contents.filter((c) => c.type === type);
+
+  const filtered = contents
+    .filter((c) => c.type === type)
+    .sort((a, b) => Number(b.id) - Number(a.id)); // ✅ newest first
+
   return filtered.slice(offset, offset + limit);
 };
+
 
 // Search by type + keyword
 export const searchContentsByTypeAndKeyword = async (
@@ -284,3 +289,4 @@ export const countContentsByGenre = async (genre) => {
     c.genre.toLowerCase().includes(genre.toLowerCase())
   ).length;
 };
+
