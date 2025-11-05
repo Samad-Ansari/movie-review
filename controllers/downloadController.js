@@ -16,7 +16,6 @@ router.get("/fetch/:token", (req, res) => {
 // ------------------ Choose File Page ------------------
 router.get("/choose/:token", async (req, res) => {
   const { token } = req.params;
-
   try {
     const decodedJson = Buffer.from(token, "base64").toString("utf-8");
     const obj = JSON.parse(decodedJson);
@@ -27,7 +26,6 @@ router.get("/choose/:token", async (req, res) => {
 
     const contentId = obj.id;
     const content = await contentService.findById(contentId); // should return the content object
-
     if (!content) {
       return res.render("default_page", { error: `Content not found for ID: ${contentId}` });
     }
