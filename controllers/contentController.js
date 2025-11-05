@@ -1,8 +1,6 @@
 // controllers/contentController.js
 import express from "express";
 import * as contentService from "../services/contentService.js";
-import * as visitService from "../services/visitService.js";
-
 const router = express.Router();
 
 /* -------------------------- Helper Functions -------------------------- */
@@ -30,7 +28,6 @@ router.get(["/", "/movies"], async (req, res) => {
 
     const totalCount = await contentService.countContentsByTypeAndKeyword("MOVIE", keyword);
     const totalPages = Math.ceil(totalCount / size);
-
     await renderPage(res, "content", {
       contents,
       currentPage: page,
@@ -93,8 +90,6 @@ router.get("/movie/:id/:slug", async (req, res) => {
     const movie = await contentService.findByIdAndType(id, "MOVIE");
     if (!movie) return res.render("default_page");
 
-    await visitService.trackVisit(req, `movie-detail-${movie.name}`);
-
     await renderPage(res, "contentdetail", {
       typeName: movie.type.toLowerCase(),
       content: movie,
@@ -118,8 +113,6 @@ router.get("/webseries/:id/:slug", async (req, res) => {
 
     const series = await contentService.findByIdAndType(id, "WEBSERIES");
     if (!series) return res.render("default_page");
-
-    await visitService.trackVisit(req, `movie-detail-${series.name}`);
 
     await renderPage(res, "contentdetail", {
       typeName: series.type.toLowerCase(),
@@ -157,40 +150,6 @@ router.get("/privacy", async (req, res) => {
     title: "Privacy Policy | MovieAurSeries",
     description: "Read our privacy policy to understand how MovieAurSeries handles your data.",
   });
-});
-
-/* -------------------------- VISIT STATS -------------------------- */
-router.get("/data/visits", async (req, res) => {
-  try {
-    const [dailyCounts, weeklyCounts, monthlyCounts, weeklyVisits, monthlyVisits, topData] =
-      await Promise.all([
-        visitService.getTodayVisits(),
-        visitService.getWeeklyVisits(),
-        visitService.getMonthlyVisits(),
-        visitService.getVisitsLast7Days(),
-        visitService.getVisitsLast30Days(),
-        visitService.topUrlVisits(),
-      ]);
-
-    const topUrls = topData.map(obj => obj.page_url);
-    const topCounts = topData.map(obj => obj.visit_count);
-
-    await renderPage(res, "visit-tracker", {
-      dailyCounts,
-      weeklyCounts,
-      monthlyCounts,
-      weeklyVisits,
-      monthlyVisits,
-      topUrls,
-      topCounts,
-    }, {
-      title: "Visitor Analytics | MovieAurSeries",
-      description: "Track visit statistics and page popularity on MovieAurSeries.",
-    });
-  } catch (err) {
-    console.error("Error fetching visits:", err);
-    res.status(500).send("Internal Server Error");
-  }
 });
 
 /* -------------------------- GET BY GENRE -------------------------- */
